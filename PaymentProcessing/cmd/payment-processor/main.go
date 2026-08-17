@@ -1,7 +1,8 @@
 ﻿package main
 
 import (
-	"App/Internal/Consumer"
+	"App/internal/adapters/kafka"
+	"App/internal/config"
 	"context"
 	"log"
 	"os"
@@ -13,27 +14,29 @@ import (
 )
 
 func main() {
-	brokers := []string{"localhost:9092"}
-	topic := "transactions"
-	groupId := "payment-consumer-group"
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
+	kafkaCfg := cfg.Kafka
 
-	config := sarama.NewConfig()
-	config.Version = sarama.V4_0_0_0
-	config.Consumer.Offsets.Initial = sarama.OffsetNewest
-	config.Consumer.Return.Errors = true
+	saramaCfg := sarama.NewConfig()
+	saramaCfg.Version = sarama.V4_0_0_0
+	saramaCfg.Consumer.Offsets.Initial = sarama.OffsetNewest
+	saramaCfg.Consumer.Return.Errors = true
 
-	consumerGroup, err := sarama.NewConsumerGroup(brokers, groupId, config)
+	consumerGroup, err := sarama.NewConsumerGroup(kafkaCfg.Brokers, kafkaCfg.GroupId, saramaCfg)
 	if err != nil {
 		log.Fatal("Error creating consumer group: ", err)
 	}
 	defer consumerGroup.Close()
 
-	log.Println("Connected to Kafka brokers: ", brokers)
+	log.Println("Connected to Kafka brokers: ", kafkaCfg.Brokers)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	handler := &Consumer.Handler{}
+	handler := &kafka.ConsumerHandler{}
 
 	go func() {
 		select {
@@ -43,7 +46,7 @@ func main() {
 		default:
 		}
 
-		err := consumerGroup.Consume(ctx, []string{topic}, handler)
+		err := consumerGroup.Consume(ctx, []string{kafkaCfg.Topic}, handler)
 		if err != nil {
 			log.Println("Error from consumer: ", err.Error())
 			time.Sleep(time.Second)

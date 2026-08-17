@@ -1,24 +1,26 @@
-﻿package Consumer
+﻿package kafka
 
 import (
+	"App/internal/domain"
+	"encoding/json"
 	"log"
 
 	"github.com/IBM/sarama"
 )
 
-type Handler struct{}
+type ConsumerHandler struct{}
 
-func (h *Handler) Setup(sarama.ConsumerGroupSession) error {
+func (h *ConsumerHandler) Setup(sarama.ConsumerGroupSession) error {
 	log.Println("Consumer group session setup")
 	return nil
 }
 
-func (h *Handler) Cleanup(sarama.ConsumerGroupSession) error {
+func (h *ConsumerHandler) Cleanup(sarama.ConsumerGroupSession) error {
 	log.Println("Consumer group session cleanup")
 	return nil
 }
 
-func (h *Handler) ConsumeClaim(
+func (h *ConsumerHandler) ConsumeClaim(
 	session sarama.ConsumerGroupSession,
 	claim sarama.ConsumerGroupClaim,
 ) error {
@@ -30,13 +32,19 @@ func (h *Handler) ConsumeClaim(
 				return nil
 			}
 
+			var transaction domain.Transaction
+			if err := json.Unmarshal(message.Value, &transaction); err != nil {
+				log.Printf("Failed to decode message at offset %d: %v", message.Offset, err)
+				continue
+			}
+
 			log.Println("=" + string(make([]byte, 50)) + "=")
 			log.Printf("Message received")
 			log.Printf("  Topic: %s", message.Topic)
 			log.Printf("  Partition: %d", message.Partition)
 			log.Printf("  Offset: %d", message.Offset)
 			log.Printf("  Key: %s", string(message.Key))
-			log.Printf("  Value: %s", string(message.Value))
+			log.Printf("  Transaction: %+v", transaction)
 			log.Println("=" + string(make([]byte, 50)) + "=")
 			log.Println()
 
