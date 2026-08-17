@@ -1,4 +1,4 @@
-﻿package App
+﻿package main
 
 import (
 	"App/Internal/Consumer"
@@ -14,11 +14,11 @@ import (
 
 func main() {
 	brokers := []string{"localhost:9092"}
-	topic := "events"
-	groupId := "consumer-group"
+	topic := "payments"
+	groupId := "payment-consumer-group"
 
 	config := sarama.NewConfig()
-	config.Version = sarama.V2_6_0_0
+	config.Version = sarama.V4_0_0_0
 	config.Consumer.Offsets.Initial = sarama.OffsetNewest
 	config.Consumer.Return.Errors = true
 
