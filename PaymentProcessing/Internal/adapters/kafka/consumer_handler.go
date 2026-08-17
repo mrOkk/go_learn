@@ -1,7 +1,7 @@
 ﻿package kafka
 
 import (
-	"App/internal/domain"
+	. "App/internal/domain"
 	"encoding/json"
 	"log"
 
@@ -32,7 +32,7 @@ func (h *ConsumerHandler) ConsumeClaim(
 				return nil
 			}
 
-			var transaction domain.Transaction
+			var transaction Transaction
 			if err := json.Unmarshal(message.Value, &transaction); err != nil {
 				log.Printf("Failed to decode message at offset %d: %v", message.Offset, err)
 				continue
