@@ -14,7 +14,7 @@ import (
 
 func main() {
 	brokers := []string{"localhost:9092"}
-	topic := "payments"
+	topic := "transactions"
 	groupId := "payment-consumer-group"
 
 	config := sarama.NewConfig()
