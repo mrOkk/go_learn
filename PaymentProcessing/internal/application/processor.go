@@ -1,7 +1,6 @@
 ﻿package application
 
 import (
-	"App/internal/cache"
 	"App/internal/domain"
 	"context"
 	"fmt"
@@ -18,7 +17,7 @@ type Processor struct {
 	merchantWriter MerchantWriter
 	txWriter       TransactionWriter
 	TxManager      TxManager
-	cache          *cache.LRUCache
+	cache          MerchantCache
 }
 
 func NewProcessor(
@@ -26,14 +25,14 @@ func NewProcessor(
 	writer MerchantWriter,
 	txWriter TransactionWriter,
 	txManager TxManager,
-	lruCache *cache.LRUCache,
+	cache MerchantCache,
 ) *Processor {
 	return &Processor{
 		merchantReader: reader,
 		merchantWriter: writer,
 		txWriter:       txWriter,
 		TxManager:      txManager,
-		cache:          lruCache,
+		cache:          cache,
 	}
 }
 
