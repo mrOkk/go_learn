@@ -34,7 +34,7 @@ func (r *MerchantRepository) GetById(ctx context.Context, id int64) (domain.Merc
 }
 
 func (r *MerchantRepository) UpdateBalance(ctx context.Context, id int64, newBalance float64) error {
-	result, err := r.pool.Exec(ctx,
+	result, err := executorFrom(ctx, r.pool).Exec(ctx,
 		`UPDATE merchants SET balance = $1 WHERE id = $2`,
 		newBalance, id)
 

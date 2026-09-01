@@ -19,7 +19,7 @@ func NewTransactionRepository(pool *pgxpool.Pool) *TransactionRepository {
 }
 
 func (r *TransactionRepository) Save(ctx context.Context, tx domain.Transaction) error {
-	_, err := r.pool.Exec(ctx,
+	_, err := executorFrom(ctx, r.pool).Exec(ctx,
 		`INSERT INTO transactions 
     			(id, merchant_id, amount, status, "timestamp")
 			VALUES ($1, $2, $3, $4, $5)
