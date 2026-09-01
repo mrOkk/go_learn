@@ -2,6 +2,9 @@
 
 import (
 	"App/internal/adapters/kafka"
+	"App/internal/adapters/postgres"
+	"App/internal/application"
+	"App/internal/cache"
 	"App/internal/config"
 	"context"
 	"log"
@@ -11,6 +14,7 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
@@ -36,7 +40,20 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	handler := &kafka.ConsumerHandler{}
+	merchantCache := cache.NewLRUCache(cfg.Cache.Capacity)
+
+	pool, err := pgxpool.New(ctx, cfg.Postgres.BuildConnectionString())
+	if err != nil {
+		log.Fatal("Error connecting to database: ", err)
+	}
+	defer pool.Close()
+
+	merchantRepo := postgres.NewMerchantRepository(pool)
+	txRepo := postgres.NewTransactionRepository(pool)
+	txManager := postgres.NewTransactionManager(pool)
+
+	processor := application.NewProcessor(merchantRepo, merchantRepo, txRepo, txManager, merchantCache)
+	handler := kafka.NewConsumerHandler(processor, cfg.Worker.QueueSize)
 
 	go func() {
 		select {

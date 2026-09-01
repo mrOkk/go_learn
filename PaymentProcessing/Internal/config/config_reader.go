@@ -14,6 +14,7 @@ func Load() (Config, error) {
 			Cache:    debugCacheConfig(),
 			Postgres: debugPostgresConfig(),
 			Kafka:    debugKafkaConfig(),
+			Worker:   debugWorkerConfig(),
 		}, nil
 	}
 
@@ -32,11 +33,22 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 
+	worker, err := loadWorkerConfig()
+	if err != nil {
+		return Config{}, err
+	}
+
 	return Config{
 		Cache:    cache,
 		Postgres: postgres,
 		Kafka:    kafka,
+		Worker:   worker,
 	}, nil
+}
+
+func loadWorkerConfig() (WorkerConfig, error) {
+	// TODO
+	return debugWorkerConfig(), nil
 }
 
 func loadAppConfig() (AppConfig, error) {

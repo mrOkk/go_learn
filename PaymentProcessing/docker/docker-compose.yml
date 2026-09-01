@@ -5,7 +5,7 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: payment_processing
+      POSTGRES_DB: transactions
       POSTGRES_USER: payment_user
       POSTGRES_PASSWORD: payment_password
     volumes:

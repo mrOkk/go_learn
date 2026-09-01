@@ -1,14 +1,23 @@
 ﻿package kafka
 
 import (
-	. "App/internal/domain"
-	"encoding/json"
+	"App/internal/application"
 	"log"
 
 	"github.com/IBM/sarama"
 )
 
-type ConsumerHandler struct{}
+type ConsumerHandler struct {
+	processor *application.Processor
+	queueSize int
+}
+
+func NewConsumerHandler(processor *application.Processor, queueSize int) *ConsumerHandler {
+	return &ConsumerHandler{
+		processor: processor,
+		queueSize: queueSize,
+	}
+}
 
 func (h *ConsumerHandler) Setup(sarama.ConsumerGroupSession) error {
 	log.Println("Consumer group session setup")
@@ -24,35 +33,12 @@ func (h *ConsumerHandler) ConsumeClaim(
 	session sarama.ConsumerGroupSession,
 	claim sarama.ConsumerGroupClaim,
 ) error {
-	for {
-		select {
-		case message, ok := <-claim.Messages():
-			if !ok {
-				log.Println("Message channel closed")
-				return nil
-			}
+	worker := newPartitionWorker(claim.Partition(), h.processor, h.queueSize)
+	defer worker.Close()
 
-			var transaction Transaction
-			if err := json.Unmarshal(message.Value, &transaction); err != nil {
-				log.Printf("Failed to decode message at offset %d: %v", message.Offset, err)
-				continue
-			}
-
-			log.Println("=" + string(make([]byte, 50)) + "=")
-			log.Printf("Message received")
-			log.Printf("  Topic: %s", message.Topic)
-			log.Printf("  Partition: %d", message.Partition)
-			log.Printf("  Offset: %d", message.Offset)
-			log.Printf("  Key: %s", string(message.Key))
-			log.Printf("  Transaction: %+v", transaction)
-			log.Println("=" + string(make([]byte, 50)) + "=")
-			log.Println()
-
-			session.MarkMessage(message, "")
-
-		case <-session.Context().Done():
-			log.Println("Session context done, exiting consume claim")
-			return nil
-		}
+	for msg := range claim.Messages() {
+		worker.Submit(session, msg)
 	}
+
+	return nil
 }
