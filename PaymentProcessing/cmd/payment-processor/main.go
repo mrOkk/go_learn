@@ -7,6 +7,7 @@ import (
 	"App/internal/cache"
 	"App/internal/config"
 	"context"
+	"errors"
 	"log"
 	"os"
 	"os/signal"
@@ -56,17 +57,17 @@ func main() {
 	handler := kafka.NewConsumerHandler(processor, cfg.Worker.QueueSize)
 
 	go func() {
-		select {
-		case <-ctx.Done():
-			log.Println("Shutting down consumer...")
-			return
-		default:
-		}
-
-		err := consumerGroup.Consume(ctx, []string{kafkaCfg.Topic}, handler)
-		if err != nil {
-			log.Println("Error from consumer: ", err.Error())
-			time.Sleep(time.Second)
+		for {
+			err := consumerGroup.Consume(ctx, []string{kafkaCfg.Topic}, handler)
+			if err != nil {
+				if errors.Is(err, sarama.ErrClosedConsumerGroup) {
+					return
+				}
+				log.Println("Error from consumer: ", err.Error())
+			}
+			if ctx.Err() != nil {
+				log.Println("Shutting down consumer...")
+			}
 		}
 	}()
 
