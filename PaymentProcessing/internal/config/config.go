@@ -1,21 +1,25 @@
 ﻿package config
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 type Config struct {
-	Cache    CacheConfig
-	Postgres PostgresConfig
-	Kafka    KafkaConfig
-	Worker   WorkerConfig
+	AppConfig AppConfig
+	Cache     CacheConfig
+	Postgres  PostgresConfig
+	Kafka     KafkaConfig
+	Worker    WorkerConfig
 }
 
 type WorkerConfig struct {
-	Count     int
 	QueueSize int
 }
 
 type AppConfig struct {
-	Env string
+	Env             string
+	ShutdownTimeout time.Duration
 }
 
 type CacheConfig struct {
@@ -46,6 +50,13 @@ func (a *AppConfig) isDebugMode() bool {
 	return a.Env == "debug"
 }
 
+func debugAppConfig() AppConfig {
+	return AppConfig{
+		Env: "debug",
+		ShutdownTimeout: 5 * time.Second,
+	}
+}
+
 func debugCacheConfig() CacheConfig {
 	return CacheConfig{Capacity: 1000}
 }
@@ -69,9 +80,8 @@ func debugKafkaConfig() KafkaConfig {
 	}
 }
 
-func debugWorkerConfig() WorkerConfig{
+func debugWorkerConfig() WorkerConfig {
 	return WorkerConfig{
-		Count: 3,
 		QueueSize: 1024,
 	}
 }

@@ -11,6 +11,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -56,7 +57,8 @@ func main() {
 	processor := application.NewProcessor(merchantRepo, merchantRepo, txRepo, txManager, merchantCache)
 	handler := kafka.NewConsumerHandler(processor, cfg.Worker.QueueSize)
 
-	go func() {
+	var wg sync.WaitGroup
+	wg.Go(func() {
 		for {
 			err := consumerGroup.Consume(ctx, []string{kafkaCfg.Topic}, handler)
 			if err != nil {
@@ -69,7 +71,7 @@ func main() {
 				log.Println("Shutting down consumer...")
 			}
 		}
-	}()
+	})
 
 	go func() {
 		for err := range consumerGroup.Errors() {
@@ -83,12 +85,22 @@ func main() {
 	signal.Notify(sinChan, syscall.SIGINT, syscall.SIGTERM)
 
 	<-sinChan
-
-	log.Println("Shutting down consumer...")
+	log.Println("Shutdown signal received, draining in-flight messages...")
 
 	cancel()
 
-	time.Sleep(2 * time.Second)
+	drained := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(drained)
+	}()
+
+	select {
+	case <-drained:
+		log.Println("All partitions drained")
+	case <-time.After(cfg.AppConfig.ShutdownTimeout):
+		log.Printf("Shutdown timeout (%s) exceeded, forcing shutdown...", cfg.AppConfig.ShutdownTimeout)
+	}
 
 	log.Println("Consumer shutdown complete.")
 }

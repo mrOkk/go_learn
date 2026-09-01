@@ -5,16 +5,18 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func Load() (Config, error) {
 	app, _ := loadAppConfig()
 	if app.isDebugMode() {
 		return Config{
-			Cache:    debugCacheConfig(),
-			Postgres: debugPostgresConfig(),
-			Kafka:    debugKafkaConfig(),
-			Worker:   debugWorkerConfig(),
+			AppConfig: debugAppConfig(),
+			Cache:     debugCacheConfig(),
+			Postgres:  debugPostgresConfig(),
+			Kafka:     debugKafkaConfig(),
+			Worker:    debugWorkerConfig(),
 		}, nil
 	}
 
@@ -57,8 +59,20 @@ func loadAppConfig() (AppConfig, error) {
 		return AppConfig{}, err
 	}
 
+	app := AppConfig{Env: env}
+
+	if app.isDebugMode() {
+		return app, nil
+	}
+
+	shutdownTimeout, err := getInt("APP_SHUTDOWN_TIMEOUT")
+	if err != nil {
+		return AppConfig{}, err
+	}
+
 	return AppConfig{
-		Env: env,
+		Env:             env,
+		ShutdownTimeout: time.Duration(shutdownTimeout) * time.Second,
 	}, nil
 }
 
