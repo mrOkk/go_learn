@@ -66,8 +66,8 @@ func debugPostgresConfig() PostgresConfig {
 		Host: "localhost",
 		Port: 5432,
 		DB:   "transactions",
-		User: "postgres",
-		Pass: "password",
+		User: "payment_user",
+		Pass: "payment_password",
 		SSL:  "disable",
 	}
 }
