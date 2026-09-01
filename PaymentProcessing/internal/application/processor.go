@@ -72,7 +72,7 @@ func (p *Processor) ProcessTransaction(ctx context.Context, tx domain.Transactio
 		return p.txWriter.Save(txCtx, tx)
 	})
 	if errUpdateBalance != nil {
-		return err
+		return errUpdateBalance
 	}
 
 	merchant.Balance = newBalance

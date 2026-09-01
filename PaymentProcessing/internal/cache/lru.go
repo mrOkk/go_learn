@@ -1,14 +1,14 @@
 ﻿package cache
 
 import (
-	. "App/internal/domain"
+	"App/internal/domain"
 	"container/list"
 	"sync"
 )
 
 type entry struct {
 	key   int64
-	value Merchant
+	value domain.Merchant
 }
 
 type LRUCache struct {
@@ -26,20 +26,20 @@ func NewLRUCache(capacity int) *LRUCache {
 	}
 }
 
-func (c *LRUCache) Get(key int64) (Merchant, bool) {
+func (c *LRUCache) Get(key int64) (domain.Merchant, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	elem, ok := c.items[key]
 	if !ok {
-		return Merchant{}, false
+		return domain.Merchant{}, false
 	}
 
 	c.order.MoveToFront(elem)
 	return elem.Value.(entry).value, true
 }
 
-func (c *LRUCache) Put(key int64, value Merchant) {
+func (c *LRUCache) Put(key int64, value domain.Merchant) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
