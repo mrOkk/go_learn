@@ -4,7 +4,7 @@ import (
 	"App/internal/domain"
 	"context"
 	"fmt"
-	"strconv"
+	"log"
 )
 
 const (
@@ -44,17 +44,13 @@ func (p *Processor) ProcessTransaction(ctx context.Context, tx domain.Transactio
 		return err
 	}
 
-	merchantId, err := strconv.ParseInt(tx.MerchantID, 10, 64)
-	if err != nil {
-		return fmt.Errorf("parse merchant id %q: %w", tx.MerchantID, err)
-	}
-
-	merchant, err := p.loadMerchant(ctx, merchantId)
+	merchant, err := p.loadMerchant(ctx, tx.MerchantID)
 	if err != nil {
 		return err
 	}
 
 	if !merchant.IsActive {
+		log.Printf("transaction=%d rejected. Merchant %d is not active", tx.ID, tx.MerchantID)
 		tx.Status = transactionStatusRejected
 		return p.TxManager.WithinTransaction(ctx, func(txCtx context.Context) error {
 			return p.txWriter.Save(txCtx, tx)
@@ -65,7 +61,7 @@ func (p *Processor) ProcessTransaction(ctx context.Context, tx domain.Transactio
 	tx.Status = transactionStatusApproved
 
 	errUpdateBalance := p.TxManager.WithinTransaction(ctx, func(txCtx context.Context) error {
-		if err := p.merchantWriter.UpdateBalance(txCtx, merchantId, newBalance); err != nil {
+		if err := p.merchantWriter.UpdateBalance(txCtx, tx.MerchantID, newBalance); err != nil {
 			return err
 		}
 		return p.txWriter.Save(txCtx, tx)
@@ -75,7 +71,8 @@ func (p *Processor) ProcessTransaction(ctx context.Context, tx domain.Transactio
 	}
 
 	merchant.Balance = newBalance
-	p.cache.Put(merchantId, merchant)
+	p.cache.Put(tx.MerchantID, merchant)
+	log.Printf("transaction=%d approved. Merchant %d has been updated. New balance %f", tx.ID, tx.MerchantID, merchant.Balance)
 
 	return nil
 }

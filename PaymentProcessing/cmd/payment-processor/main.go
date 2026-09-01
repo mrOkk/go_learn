@@ -69,6 +69,7 @@ func main() {
 			}
 			if ctx.Err() != nil {
 				log.Println("Shutting down consumer...")
+				return
 			}
 		}
 	})
