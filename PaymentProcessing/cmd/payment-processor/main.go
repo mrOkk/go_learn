@@ -6,6 +6,7 @@ import (
 	"App/internal/application"
 	"App/internal/cache"
 	"App/internal/config"
+	"App/internal/domain"
 	"context"
 	"errors"
 	"log"
@@ -42,7 +43,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	merchantCache := cache.NewLRUCache(cfg.Cache.Capacity)
+	merchantCache := cache.NewLRUCache[domain.Merchant](cfg.Cache.Capacity)
 
 	pool, err := pgxpool.New(ctx, cfg.Postgres.BuildConnectionString())
 	if err != nil {

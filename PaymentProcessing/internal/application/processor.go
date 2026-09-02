@@ -16,8 +16,8 @@ type Processor struct {
 	merchantReader MerchantReader
 	merchantWriter MerchantWriter
 	txWriter       TransactionWriter
-	TxManager      TxManager
-	cache          MerchantCache
+	TxManager TxManager
+	cache     CacheController[domain.Merchant]
 }
 
 func NewProcessor(
@@ -25,7 +25,7 @@ func NewProcessor(
 	writer MerchantWriter,
 	txWriter TransactionWriter,
 	txManager TxManager,
-	cache MerchantCache,
+	cache CacheController[domain.Merchant],
 ) *Processor {
 	return &Processor{
 		merchantReader: reader,

@@ -1,6 +1,6 @@
 module App
 
-go 1.26.5
+go 1.27
 
 require (
 	github.com/IBM/sarama v1.60.2

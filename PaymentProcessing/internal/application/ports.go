@@ -21,7 +21,7 @@ type TxManager interface {
 	WithinTransaction(ctx context.Context, fn func(ctx context.Context) error) error
 }
 
-type MerchantCache interface {
-	Get(key int64) (domain.Merchant, bool)
-	Put(key int64, value domain.Merchant)
+type CacheController[T any] interface {
+	Get(key int64) (T, bool)
+	Put(key int64, value T)
 }
