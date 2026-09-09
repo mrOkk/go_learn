@@ -7,3 +7,9 @@ Current goal: see [Task](PaymentProcessing/Task.md)
 Current status: see [Status](PaymentProcessing/Status.md)
 
 -----
+
+Directory [UrlShortener](UrlShortener) is a project for a url shortener service
+
+-----
+
+Directory [TestTasksFromYoutube](TestTasksFromYoutube) is for various tasks from youtube or some other tasks from internet
