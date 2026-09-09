@@ -21,7 +21,7 @@ func NewLRUCache[T any](capacity int) *LRUCache[T] {
 	return &LRUCache[T]{
 		capacity: capacity,
 		items:    make(map[int64]*list.Element),
-		order: list.New(),
+		order:    list.New(),
 	}
 }
 
@@ -59,7 +59,7 @@ func (c *LRUCache[T]) Put(key int64, value T) {
 	}
 }
 
-func (c *LRUCache[T]) Delete(key int64)  {
+func (c *LRUCache[T]) Delete(key int64) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
