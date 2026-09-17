@@ -1,21 +1,29 @@
 package handler
 
 import (
+	"UrlShortener/internal/domain"
+	"UrlShortener/internal/service"
+	"context"
 	"fmt"
 	"html/template"
 	"net/http"
 )
 
+const shorteningFailed = "Shortening failed"
+
 type Handler struct {
-	tmpl *template.Template
+	tmpl   *template.Template
+	urlSrv *service.UrlService
 }
 
-func NewHandler(tmpl *template.Template) *Handler {
-	return &Handler{tmpl: tmpl}
+func NewHandler(tmpl *template.Template, urlSrv *service.UrlService) *Handler {
+	return &Handler{
+		tmpl:   tmpl,
+		urlSrv: urlSrv,
+	}
 }
 
 func (h *Handler) Home(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Home page | ", r.URL)
 	err := h.tmpl.Execute(w, nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -23,15 +31,40 @@ func (h *Handler) Home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Shorten(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Shorten page | ", r.URL)
+	if r.ParseForm() != nil {
+		http.Error(w, shorteningFailed, http.StatusBadRequest)
+		return
+	}
+	url := r.PostFormValue("url")
+	fmt.Println(url)
+
+	code, err := h.urlSrv.Put(context.TODO(), url)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = h.tmpl.Execute(w, domain.PageData{ShortURL: code})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func (h *Handler) RedirectByPath(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("RedirectByPath page | ", r.URL)
-	http.Error(w, "not implemented", http.StatusNotImplemented)
+	h.Redirect(w, r, r.PathValue("code"))
 }
 
 func (h *Handler) RedirectByQuery(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("RedirectByQuery page | ", r.URL)
-	http.Error(w, "not implemented", http.StatusNotImplemented)
+	code := r.URL.Query().Get("code")
+	h.Redirect(w, r, code)
+}
+
+func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request, code string) {
+	url, err := h.urlSrv.Get(context.TODO(), code)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	http.Redirect(w, r, url, http.StatusSeeOther)
 }
