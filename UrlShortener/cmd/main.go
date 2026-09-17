@@ -1,7 +1,7 @@
 package main
 
 import (
-	handler2 "UrlShortener/internal/handler"
+	"UrlShortener/internal/handler"
 	"UrlShortener/internal/repository"
 	"UrlShortener/internal/service"
 	"errors"
@@ -21,7 +21,7 @@ func main() {
 	persistent := repository.NewStubStorage()
 	repoSrv := service.NewRepositoryService(cache, persistent)
 	urlSrv := service.NewUrlService(repoSrv)
-	h := handler2.NewHandler(tmpl, urlSrv)
+	h := handler.NewHandler(tmpl, urlSrv)
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", h.Home)
 	mux.HandleFunc("POST /shorten", h.Shorten)
