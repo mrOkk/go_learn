@@ -3,7 +3,6 @@ package handler
 import (
 	"UrlShortener/internal/domain"
 	"UrlShortener/internal/service"
-	"context"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -38,7 +37,7 @@ func (h *Handler) Shorten(w http.ResponseWriter, r *http.Request) {
 	url := r.PostFormValue("url")
 	fmt.Println(url)
 
-	code, err := h.urlSrv.Put(context.TODO(), url)
+	code, err := h.urlSrv.Put(r.Context(), url)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -62,7 +61,7 @@ func (h *Handler) RedirectByQuery(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request, code string) {
-	url, err := h.urlSrv.Get(context.TODO(), code)
+	url, err := h.urlSrv.Get(r.Context(), code)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

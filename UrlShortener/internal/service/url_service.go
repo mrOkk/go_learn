@@ -1,6 +1,10 @@
 package service
 
-import "context"
+import (
+	"UrlShortener/internal/repository"
+	"context"
+	"errors"
+)
 
 const retriesCount = 5
 
@@ -26,7 +30,9 @@ func (r *UrlService) Put(ctx context.Context, url string) (string, error) {
 		if err == nil {
 			return code, nil
 		}
-		// TODO: handle specific types of errors
+		if !errors.Is(err, &repository.ConflictError{}) {
+			return "", err
+		}
 	}
 	return "", err
 }
