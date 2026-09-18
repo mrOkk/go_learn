@@ -52,11 +52,12 @@ func (s *StubCache) Save(_ context.Context, code string, url string) error {
 }
 
 func (s *StubCache) Get(_ context.Context, code string) (string, bool, error) {
-	url, ok := s.storage[code]
-	if !ok {
-		fmt.Printf("[StubCache] Get(%s) | Url NOT found\n", code)
-		return "", false, fmt.Errorf("url not found")
-	}
-	fmt.Printf("[StubCache] Get(%s) | Url found: %s\n", code, url)
-	return url, true, nil
+	return "", false, nil
+	//url, ok := s.storage[code]
+	//if !ok {
+	//	fmt.Printf("[StubCache] Get(%s) | Url NOT found\n", code)
+	//	return "", false, fmt.Errorf("url not found")
+	//}
+	//fmt.Printf("[StubCache] Get(%s) | Url found: %s\n", code, url)
+	//return url, true, nil
 }

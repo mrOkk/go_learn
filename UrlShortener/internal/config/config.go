@@ -18,27 +18,27 @@ type AppConfig struct {
 
 type RedisConfig struct {
 	TTL  time.Duration `env:"TTL" envDefault:"24h"`
-	host string        `env:"HOST"`
-	port string        `env:"PORT"`
+	Host string        `env:"HOST"`
+	Port string        `env:"PORT"`
 }
 
 type PostgresConfig struct {
-	host string `env:"HOST"`
-	port int    `env:"PORT"`
-	db   string `env:"DB"`
-	user string `env:"USER"`
-	pass string `env:"PASS"`
-	ssl  string `env:"SSL"`
+	Host string `env:"HOST"`
+	Port int    `env:"PORT"`
+	DB   string `env:"DB"`
+	User string `env:"USER"`
+	Pass string `env:"PASS"`
+	SSL  string `env:"SSL"`
 }
 
 func (r RedisConfig) GetOpts() *redis.Options {
 	return &redis.Options{
-		Addr: fmt.Sprintf("%s:%s", r.host, r.port),
+		Addr: fmt.Sprintf("%s:%s", r.Host, r.Port),
 	}
 }
 
 func (p PostgresConfig) GetConnString() string {
-	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s", p.host, p.port, p.user, p.pass, p.db, p.ssl)
+	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s", p.Host, p.Port, p.User, p.Pass, p.DB, p.SSL)
 }
 
 func Load() AppConfig {

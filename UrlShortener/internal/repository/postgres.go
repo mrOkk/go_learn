@@ -30,11 +30,10 @@ func (e *ConflictError) Error() string {
 func (p *Postgres) Save(ctx context.Context, code string, url string) error {
 	_, err := p.pool.Exec(ctx,`INSERT INTO urls (short_code, original_url) VALUES ($1, $2)`, code, url)
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, pgErr) && pgErr.Code == "23505" {
+		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == "23505" {
 			return &ConflictError{Code: code}
 		}
-		return err
+		return fmt.Errorf("could not save url: %w", err)
 	}
 	return nil
 }

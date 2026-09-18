@@ -36,14 +36,14 @@ func (r *RepositoryService) Save(ctx context.Context, code, url string) error {
 }
 
 func (r *RepositoryService) Get(ctx context.Context, code string) (string, error) {
-	code, ok, _ := r.cache.Get(ctx, code)
+	url, ok, _ := r.cache.Get(ctx, code)
 	if ok {
-		return code, nil
+		return url, nil
 	}
-	code, err := r.storage.Get(ctx, code)
+	url, err := r.storage.Get(ctx, code)
 	if err != nil {
 		return "", err
 	}
-	r.cache.Save(ctx, code, code)
-	return code, nil
+	r.cache.Save(ctx, code, url)
+	return url, nil
 }

@@ -29,5 +29,5 @@ func (r *Redis) Get(ctx context.Context, code string) (string, bool, error) {
 	if cmd.Err() != nil {
 		return "", false, cmd.Err()
 	}
-	return cmd.String(), true, nil
+	return cmd.Val(), true, nil
 }
