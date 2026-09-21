@@ -64,6 +64,7 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request, code string) 
 	url, err := h.urlSrv.Get(r.Context(), code)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	http.Redirect(w, r, url, http.StatusSeeOther)
 }
