@@ -30,7 +30,7 @@ func (r *UrlService) Put(ctx context.Context, url string) (string, error) {
 		if err == nil {
 			return code, nil
 		}
-		if !errors.Is(err, &repository.ConflictError{}) {
+		if _, ok := errors.AsType[*repository.ConflictError](err); !ok {
 			return "", err
 		}
 	}
