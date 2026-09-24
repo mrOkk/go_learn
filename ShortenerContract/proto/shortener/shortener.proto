@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package shortener;
+
+option go_package = "shortener.v1";
+
+service Shortener {
+  rpc Shorten(ShortenRequest) returns (ShortenResponse);
+  rpc Resolve(ResolveRequest) returns (ResolveResponse);
+}
+
+message ShortenRequest {
+  string url = 1;
+}
+message ShortenResponse {
+  string code = 1;
+}
+
+message ResolveRequest {
+  string code = 1;
+}
+message ResolveResponse {
+  string url = 1;
+}
+
+service Registry {
+  rpc Register(RegisterRequest) returns(RegisterResponse);
+  rpc Heartbeat(HeartbeatRequest) returns(HeartbeatResponse);
+  rpc Deregister(DeregisterRequest) returns(DeregisterResponse);
+}
+
+message RegisterRequest {
+  string address = 1;
+}
+message RegisterResponse {
+  string instance_id = 1;
+  int64 ttl_seconds = 2;
+}
+message HeartbeatRequest {
+  string instance_id = 1;
+}
+message HeartbeatResponse {
+}
+message DeregisterRequest {
+  string instance_id = 1;
+}
+message DeregisterResponse {
+}
