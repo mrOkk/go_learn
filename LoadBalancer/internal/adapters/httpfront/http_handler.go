@@ -67,7 +67,7 @@ func (h *HTTPHandler) Shorten(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.tmpl.Execute(w, PageData {ShortURL: code})
+	err = h.tmpl.Execute(w, PageData{ShortURL: code})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

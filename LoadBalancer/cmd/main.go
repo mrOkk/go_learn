@@ -31,8 +31,8 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	reg := registry.NewRegistry(cfg.GRPC.Timeout)
-	go reg.SweepJob(ctx, cfg.GRPC.Timeout/3)
+	reg := registry.NewRegistry(cfg.GRPC.TTL)
+	go reg.SweepJob(ctx, cfg.GRPC.TTL/3)
 
 	picker := app.NewRoundRobin(reg)
 

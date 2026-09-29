@@ -13,8 +13,8 @@ type Config struct {
 }
 
 type GRPCConfig struct {
-	Port    int           `env:"PORT" envDefault:"8883"`
-	Timeout time.Duration `env:"TIMEOUT" envDefault:"1m"`
+	Port int           `env:"PORT" envDefault:"8883"`
+	TTL  time.Duration `env:"TTL" envDefault:"1m"`
 }
 
 func LoadConfig() (Config, error) {
