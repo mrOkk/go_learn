@@ -11,9 +11,11 @@ import (
 )
 
 type AppConfig struct {
-	Port     string         `env:"PORT" envDefault:"8080"`
-	Redis    RedisConfig    `envPrefix:"REDIS_"`
-	Postgres PostgresConfig `envPrefix:"POSTGRES_"`
+	GrpcPort  string         `env:"GRPC_PORT"`
+	LocalAddr string         `env:"LOCAL_ADDR"`
+	LbAddr    string         `env:"LB_ADDR"`
+	Redis     RedisConfig    `envPrefix:"REDIS_"`
+	Postgres  PostgresConfig `envPrefix:"POSTGRES_"`
 }
 
 type RedisConfig struct {
@@ -48,5 +50,6 @@ func Load() AppConfig {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Printf("config: %v", config)
 	return config
 }

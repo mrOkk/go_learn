@@ -1,26 +1,36 @@
 package main
 
 import (
+	shortenerv1 "ShortenerContract/gen/go/shortener"
+	"UrlShortener/internal/adapters/grpcclient"
+	"UrlShortener/internal/adapters/grpcserver"
 	"UrlShortener/internal/config"
-	"UrlShortener/internal/handler"
 	"UrlShortener/internal/repository"
 	"UrlShortener/internal/service"
 	"context"
-	"errors"
 	"fmt"
-	"html/template"
 	"log"
-	"net/http"
+	"net"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
 	fmt.Println("Shortener started")
-	ctx := context.Background()
-
 	appConfig := config.Load()
+	fmt.Println("Configuration loaded")
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	redisClient := createRedisConn(appConfig.Redis)
 	defer redisClient.Close()
 
@@ -30,28 +40,54 @@ func main() {
 	}
 	defer gpPool.Close()
 
+	rc := createRegistryClient(ctx, appConfig.LbAddr, fmt.Sprintf("%s:%s", appConfig.LocalAddr, appConfig.GrpcPort))
+	defer rc.Close()
+
 	cache := repository.NewRedis(redisClient, appConfig.Redis.TTL)
 	persistent := repository.NewPostgres(gpPool)
 	urlSrv := createUrlService(cache, persistent)
 
-	tmpl, err := template.ParseFiles("templates/index.html")
-	if err != nil {
-		log.Fatal(err)
+	shortenerSrv := grpcserver.NewShortenerServer(urlSrv)
+	grpcSrv := grpc.NewServer()
+	shortenerv1.RegisterShortenerServer(grpcSrv, shortenerSrv)
+	grpcLis, _ := net.Listen("tcp", fmt.Sprintf(":%s", appConfig.GrpcPort))
+
+	go func() {
+		log.Printf("grpc registry server listening on %s", grpcLis.Addr())
+		if err := grpcSrv.Serve(grpcLis); err != nil {
+			log.Printf("grpc server error: %v\n", err)
+		}
+	}()
+
+	<-ctx.Done()
+
+	fmt.Println("Shutting down...")
+
+	stopCtx, stopCancel := context.WithTimeout(context.Background(), time.Duration(10) * time.Second)
+	defer stopCancel()
+
+	gracefulDone := make(chan struct{})
+	stopWg := &sync.WaitGroup{}
+
+	stopWg.Go(func() {
+		rc.Deregister(stopCtx)
+	})
+
+	stopWg.Go(func() {
+		grpcSrv.GracefulStop()
+	})
+
+	go func() {
+		stopWg.Wait()
+		close(gracefulDone)
+	}()
+
+	select {
+	case <-stopCtx.Done():
+	case <-gracefulDone:
 	}
 
-	h := handler.NewHandler(tmpl, urlSrv)
-	mux := http.NewServeMux()
-	registerHandlers(mux, h)
-
-	srv := http.Server{Addr: fmt.Sprintf(":%s", appConfig.Port), Handler: mux}
-	err = srv.ListenAndServe()
-	defer srv.Close()
-
-	if errors.Is(err, http.ErrServerClosed) {
-		fmt.Println("Shortener server closed, TODO graceful shutdown")
-	} else if err != nil {
-		fmt.Println("Shortener server get unhandled error", err)
-	}
+	fmt.Println("Shortener stopped")
 }
 
 func createRedisConn(config config.RedisConfig) *redis.Client {
@@ -67,12 +103,10 @@ func createUrlService(cache service.CacheStorage, persistent service.UrlStorage)
 	return service.NewUrlService(repoSrv)
 }
 
-func registerHandlers(mux *http.ServeMux, h *handler.Handler) {
-	mux.HandleFunc("GET /", h.Home)
-	mux.HandleFunc("POST /shorten", h.Shorten)
-	mux.HandleFunc("GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
-		http.NotFound(w, r)
-	})
-	mux.HandleFunc("GET /{code}", h.RedirectByPath)
-	mux.HandleFunc("GET /redirect", h.RedirectByQuery)
+func createRegistryClient(ctx context.Context, lbAddr, localAddr string) *grpcclient.RegistryClient {
+	conn, _ := grpc.NewClient(lbAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	rc := grpcclient.NewRegistryClient(conn, localAddr)
+	rc.Register(ctx)
+	rc.RunHeartbeat(ctx)
+	return rc
 }
